@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown</title>
+    <style>
+        :root {
+            --color: #FFA500;
+            --title-color: #FFA500;
+            --bg: #1e1e1e;
+            --size: 12;
+            --font: "Space Mono", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: var(--font);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        #stage {
+            max-width: 100%;
+            padding: 2vw;
+        }
+
+        #glow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: calc(var(--size) * 0.15vw);
+        }
+
+        .ink {
+            --ink: var(--color);
+            color: var(--ink);
+        }
+
+        #title {
+            --ink: var(--title-color);
+            font-size: calc(var(--size) * 0.4vw);
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+        }
+
+        #title:empty,
+        #date:empty {
+            display: none;
+        }
+
+        #display {
+            font-size: calc(var(--size) * 1vw);
+            line-height: 1.05;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #display.fmt-words {
+            font-size: calc(var(--size) * 0.42vw);
+            white-space: normal;
+        }
+
+        #display.fmt-blocks {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 0.12em;
+            font-size: calc(var(--size) * 0.75vw);
+        }
+
+        .block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 1.6em;
+            padding: 0.12em 0.18em 0.14em;
+            border-radius: 0.1em;
+            border: 0.02em solid color-mix(in srgb, var(--color) 40%, transparent);
+            background: color-mix(in srgb, var(--color) 8%, transparent);
+        }
+
+        .block .l {
+            font-size: 0.2em;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-top: 0.25em;
+        }
+
+        .u {
+            font-size: 0.45em;
+            margin-left: 0.05em;
+            opacity: 0.85;
+        }
+
+        .end {
+            display: inline-block;
+            font-size: 0.6em;
+            white-space: normal;
+        }
+
+        #date {
+            color: var(--title-color);
+            opacity: 0.7;
+            font-size: calc(var(--size) * 0.16vw);
+        }
+
+        /* Glow */
+        body.glow #glow {
+            filter: drop-shadow(0 0 calc(var(--size) * 0.05vw) var(--color))
+                    drop-shadow(0 0 calc(var(--size) * 0.2vw) var(--color));
+        }
+
+        /* Shine: a highlight sweeping across the text */
+        body.shine .ink {
+            background: linear-gradient(110deg, var(--ink) 0%, var(--ink) 40%, #fff 50%, var(--ink) 60%, var(--ink) 100%);
+            background-size: 250% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            0% { background-position: 100% 0; }
+            60%, 100% { background-position: 0% 0; }
+        }
+
+        /* Glitch: occasional RGB split, jump and slice */
+        body.glitch #stage {
+            animation: glitch 3s infinite steps(1);
+        }
+
+        @keyframes glitch {
+            0%, 6%, 50%, 54%, 100% {
+                transform: none;
+                filter: none;
+                clip-path: none;
+            }
+            2% {
+                transform: translate(-0.4vw, 0.2vw) skewX(-8deg);
+                filter: drop-shadow(0.5vw 0 #ff0040) drop-shadow(-0.5vw 0 #00e5ff);
+            }
+            4% {
+                transform: translate(0.4vw, -0.2vw);
+                clip-path: inset(20% 0 45% 0);
+                filter: drop-shadow(-0.5vw 0 #ff0040) drop-shadow(0.5vw 0 #00e5ff);
+            }
+            51% {
+                transform: translate(0.3vw, 0);
+                clip-path: inset(55% 0 10% 0);
+                filter: drop-shadow(0.4vw 0 #ff0040) drop-shadow(-0.4vw 0 #00e5ff);
+            }
+            52% {
+                transform: translate(-0.2vw, 0) skewX(6deg);
+                filter: drop-shadow(-0.3vw 0 #ff0040) drop-shadow(0.3vw 0 #00e5ff);
+            }
+        }
+
+        /* Pulse during the final 10 seconds */
+        body.pulse.final #display {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        /* Blinking separators */
+        body.blink .sep {
+            animation: blink 1s steps(1) infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.15; }
+        }
+
+        body.ended #display {
+            animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+        }
+
+        @keyframes pop {
+            from { transform: scale(0.6); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="stage">
+    <div id="glow">
+        <div id="title" class="ink"></div>
+        <div id="display"></div>
+        <div id="date"></div>
+    </div>
+</div>
+
+<script>
+    const UNIT_MS = { d: 86400000, h: 3600000, m: 60000, s: 1000 };
+    const UNIT_NAMES = { d: ['day', 'days'], h: ['hour', 'hours'], m: ['minute', 'minutes'], s: ['second', 'seconds'] };
+    const FORMATS = ['colon', 'labels', 'blocks', 'words'];
+    // Fonts that are already on the device and should not be fetched from Google Fonts
+    const LOCAL_FONTS = ['system-ui', 'serif', 'sans-serif', 'monospace', 'cursive', 'Arial', 'Georgia', 'Courier New', 'Impact', 'Times New Roman', 'Verdana'];
+    const GENERIC_FAMILIES = ['system-ui', 'serif', 'sans-serif', 'monospace', 'cursive'];
+
+    const titleEl = document.getElementById('title');
+    const displayEl = document.getElementById('display');
+    const dateEl = document.getElementById('date');
+
+    let cfg = null;
+    let lastHtml = '';
+    let lastTitle = null;
+
+    function parseConfig(query) {
+        const bool = (key, fallback) => query.has(key) ? /^(1|true|yes|on)$/i.test(query.get(key)) : fallback;
+        const color = (key, fallback) => {
+            const value = query.get(key);
+            return value && /^#[0-9a-f]{3,8}$/i.test(value) ? value : fallback;
+        };
+
+        const target = query.get('target') ? new Date(query.get('target')) : null;
+
+        let timezone = query.get('timezone') || undefined;
+        try {
+            new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+        } catch {
+            timezone = undefined;
+        }
+
+        let font = (query.get('font') || 'Space Mono').trim();
+        if (!/^[A-Za-z0-9 -]{1,60}$/.test(font)) font = 'Space Mono';
+
+        let units = ['d', 'h', 'm', 's'].filter(u => (query.get('units') ?? 'dhms').includes(u));
+        if (!units.length) units = ['s'];
+
+        const fontColor = color('fontColor', '#FFA500');
+        const size = Math.min(40, Math.max(2, parseFloat(query.get('size')) || 12));
+
+        return {
+            target: target && !isNaN(target) ? target.getTime() : null,
+            timezone,
+            title: query.get('title') ?? '',
+            endText: query.get('endText') ?? "TIME'S UP!",
+            font,
+            fontColor,
+            titleColor: color('titleColor', fontColor),
+            bg: query.get('bg') === 'transparent' ? 'transparent' : color('bg', '#1e1e1e'),
+            format: FORMATS.includes(query.get('format')) ? query.get('format') : 'colon',
+            units,
+            size,
+            pad: bool('pad', true),
+            hideZero: bool('hideZero', false),
+            showDate: bool('showDate', false),
+            overtime: bool('overtime', false),
+            shine: bool('shineEffect', false),
+            glitch: bool('glitchEffect', false),
+            glow: bool('glow', false),
+            pulse: bool('pulse', false),
+            blink: bool('blink', false),
+        };
+    }
+
+    function loadFont(font) {
+        if (LOCAL_FONTS.includes(font)) return;
+        const href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font).replace(/%20/g, '+')}&display=swap`;
+        if ([...document.querySelectorAll('link[data-font]')].some(link => link.href === href)) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.dataset.font = font;
+        document.head.appendChild(link);
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function formatDuration(ms, c, roundUp, prefix = '') {
+        // Round to the smallest shown unit: up while counting down (so 0 appears exactly at the end), down while counting up
+        const smallest = UNIT_MS[c.units[c.units.length - 1]];
+        ms = (roundUp ? Math.ceil(ms / smallest) : Math.floor(ms / smallest)) * smallest;
+
+        // The largest shown unit absorbs any hidden larger units (e.g. 50 hours if days are off)
+        let rest = ms;
+        let parts = c.units.map(u => {
+            const value = Math.floor(rest / UNIT_MS[u]);
+            rest -= value * UNIT_MS[u];
+            return { u, value };
+        });
+        if (c.hideZero) {
+            while (parts.length > 1 && parts[0].value === 0) parts.shift();
+        }
+
+        const num = (value, i) => (c.pad || (c.format === 'colon' && i > 0)) ? String(value).padStart(2, '0') : String(value);
+        const name = p => UNIT_NAMES[p.u][p.value === 1 ? 0 : 1];
+        const ink = html => `<span class="ink">${html}</span>`;
+
+        switch (c.format) {
+            case 'labels':
+                return ink(prefix + parts.map((p, i) => `${num(p.value, i)}<span class="u">${p.u}</span>`).join(' '));
+            case 'words':
+                return ink(prefix + parts.map(p => `${p.value} ${name(p)}`).join(', '));
+            case 'blocks':
+                return (prefix ? ink(prefix) : '') + parts.map((p, i) =>
+                    `<span class="block"><span class="ink n">${num(p.value, i)}</span><span class="ink l">${name(p)}</span></span>`
+                ).join('');
+            default:
+                return ink(prefix + parts.map((p, i) => num(p.value, i)).join('<span class="sep">:</span>'));
+        }
+    }
+
+    function formatTargetDate(c) {
+        return new Intl.DateTimeFormat(undefined, {
+            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit', timeZone: c.timezone, timeZoneName: 'short',
+        }).format(c.target);
+    }
+
+    function render() {
+        const c = cfg;
+        const body = document.body;
+
+        if (c.target === null) {
+            body.classList.remove('ended', 'final');
+            setTitle('No countdown configured');
+            setDisplay('<span class="ink">--:--:--</span>');
+            dateEl.textContent = 'Create a link with the configurator (index.html).';
+            return;
+        }
+
+        const ms = c.target - Date.now();
+        const ended = ms <= 0;
+        body.classList.toggle('ended', ended);
+        body.classList.toggle('final', !ended && ms <= 10000);
+
+        if (!ended) {
+            setTitle(c.title);
+            setDisplay(formatDuration(ms, c, true));
+        } else if (c.overtime) {
+            setTitle(c.endText);
+            setDisplay(formatDuration(-ms, c, false, '+'));
+        } else {
+            setTitle(c.title);
+            setDisplay(`<span class="ink end">${escapeHtml(c.endText)}</span>`);
+        }
+
+        dateEl.textContent = c.showDate ? `${ended ? 'Ended' : 'Ends'} ${formatTargetDate(c)}` : '';
+    }
+
+    function setTitle(text) {
+        if (text !== lastTitle) {
+            titleEl.textContent = text;
+            lastTitle = text;
+        }
+    }
+
+    function setDisplay(html) {
+        if (html !== lastHtml) {
+            displayEl.innerHTML = html;
+            lastHtml = html;
+        }
+    }
+
+    function apply(c) {
+        cfg = c;
+        const root = document.documentElement.style;
+        root.setProperty('--color', c.fontColor);
+        root.setProperty('--title-color', c.titleColor);
+        root.setProperty('--bg', c.bg);
+        root.setProperty('--size', c.size);
+        root.setProperty('--font', GENERIC_FAMILIES.includes(c.font) ? c.font : `"${c.font}", monospace`);
+        loadFont(c.font);
+
+        const body = document.body;
+        body.classList.toggle('shine', c.shine);
+        body.classList.toggle('glitch', c.glitch);
+        body.classList.toggle('glow', c.glow);
+        body.classList.toggle('pulse', c.pulse);
+        body.classList.toggle('blink', c.blink);
+        displayEl.className = `fmt-${c.format}`;
+
+        lastHtml = '';
+        lastTitle = null;
+        render();
+    }
+
+    // The configurator's live preview sends updated settings without reloading the page
+    window.addEventListener('message', event => {
+        if (event.source !== window.parent || !event.data || event.data.type !== 'countdown-config') return;
+        apply(parseConfig(new URLSearchParams(event.data.query)));
+    });
+
+    apply(parseConfig(new URLSearchParams(location.search)));
+    setInterval(render, 100);
+</script>
+
+</body>
+</html>
