@@ -82,7 +82,9 @@
         }
 
         .docs {
-            grid-column: 1 / -1;
+            max-width: 1280px;
+            margin: 0 auto 2em;
+            padding: 0 1em;
         }
 
         @media (max-width: 900px) {
@@ -311,7 +313,8 @@
     <p>Design a countdown, watch it update live, then copy the link. No accounts or API keys needed.</p>
 </header>
 
-<main class="layout">
+<main>
+<div class="layout">
     <form id="timerForm" class="panel">
         <fieldset>
             <legend>When</legend>
@@ -430,7 +433,10 @@
         </section>
     </div>
 
-    <section class="panel docs">
+</div>
+
+<div class="docs">
+    <section class="panel">
         <h2>How to use it</h2>
         <ol>
             <li>Pick the <strong>date, time and timezone</strong> of the moment you are counting down to.</li>
@@ -478,6 +484,7 @@
             </table>
         </div>
     </section>
+</div>
 </main>
 
 <script>
