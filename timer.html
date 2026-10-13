@@ -133,6 +133,8 @@
             background-clip: text;
             color: transparent;
             animation: shine 3s linear infinite;
+            /* The timer text is rebuilt every second, so sync to the clock instead of restarting */
+            animation-delay: var(--phase);
         }
 
         @keyframes shine {
@@ -197,6 +199,100 @@
         @keyframes pop {
             from { transform: scale(0.6); opacity: 0; }
         }
+
+        /* Comic: ink outline and stacked hard shadows, like the Stream Tools title */
+        body.comic #glow {
+            rotate: -2deg;
+        }
+
+        body.comic #title,
+        body.comic #display {
+            filter: drop-shadow(0.03em 0 0 #111) drop-shadow(-0.03em 0 0 #111)
+                    drop-shadow(0 0.03em 0 #111) drop-shadow(0 -0.03em 0 #111)
+                    drop-shadow(0.04em 0.04em 0 #111) drop-shadow(0.035em 0.035em 0 #ff2bd6);
+        }
+
+        body.comic .block {
+            border: 0.05em solid #111;
+            background: color-mix(in srgb, var(--color) 18%, #111);
+        }
+
+        /* Rainbow: colors flowing through the text */
+        body.rainbow .ink {
+            background: linear-gradient(90deg, #ff2bd6, #7a5cff, #00e5ff, #39ff88, #ffe600, #ff2bd6) 0 0 / 200% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbow 3s linear infinite;
+            animation-delay: var(--phase);
+        }
+
+        @keyframes rainbow {
+            to { background-position: -200% 0; }
+        }
+
+        /* Float: a gentle bob */
+        body.float #glow {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { translate: 0 0; }
+            50% { translate: 0 -1.5vw; }
+        }
+
+        /* Tick: the numbers bump each time they change */
+        body.tick #display > * {
+            animation: tick 0.35s ease-out;
+        }
+
+        body.tick.shine #display > .ink {
+            animation: tick 0.35s ease-out, shine 3s linear var(--phase) infinite;
+        }
+
+        body.tick.rainbow #display > .ink {
+            animation: tick 0.35s ease-out, rainbow 3s linear var(--phase) infinite;
+        }
+
+        @keyframes tick {
+            from { scale: 1.12; }
+        }
+
+        /* Shake during the final 10 seconds */
+        body.shake.final #display {
+            animation: shake 0.3s linear infinite;
+        }
+
+        body.shake.pulse.final #display {
+            animation: shake 0.3s linear infinite, pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { translate: 0 0; }
+            25% { translate: -0.03em 0.01em; }
+            50% { translate: 0.02em -0.02em; }
+            75% { translate: 0.03em 0.01em; }
+        }
+
+        /* Confetti when time runs out */
+        #confetti {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        #confetti i {
+            position: absolute;
+            top: -5vh;
+            width: 1.2vw;
+            height: 0.7vw;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translate(var(--drift), 110vh) rotate(var(--spin)); }
+        }
     </style>
 </head>
 <body>
@@ -208,6 +304,7 @@
         <div id="date"></div>
     </div>
 </div>
+<div id="confetti"></div>
 
 <script>
     const UNIT_MS = { d: 86400000, h: 3600000, m: 60000, s: 1000 };
@@ -224,6 +321,7 @@
     let cfg = null;
     let lastHtml = '';
     let lastTitle = null;
+    let wasEnded = null;
 
     function parseConfig(query) {
         const bool = (key, fallback) => query.has(key) ? /^(1|true|yes|on)$/i.test(query.get(key)) : fallback;
@@ -271,6 +369,12 @@
             glow: bool('glow', false),
             pulse: bool('pulse', false),
             blink: bool('blink', false),
+            comic: bool('comic', false),
+            rainbow: bool('rainbow', false),
+            float: bool('float', false),
+            tick: bool('tick', false),
+            shake: bool('shake', false),
+            confetti: bool('confetti', false),
         };
     }
 
@@ -342,8 +446,14 @@
             return;
         }
 
-        const ms = c.target - Date.now();
+        const now = Date.now();
+        document.documentElement.style.setProperty('--phase', `-${now % 3000}ms`);
+
+        const ms = c.target - now;
         const ended = ms <= 0;
+        // Only celebrate an ending seen live, not one that was already over when the page loaded
+        if (ended && wasEnded === false && c.confetti) launchConfetti();
+        wasEnded = ended;
         body.classList.toggle('ended', ended);
         body.classList.toggle('final', !ended && ms <= 10000);
 
@@ -359,6 +469,24 @@
         }
 
         dateEl.textContent = c.showDate ? `${ended ? 'Ended' : 'Ends'} ${formatTargetDate(c)}` : '';
+    }
+
+    function launchConfetti() {
+        const colors = ['#ff2bd6', '#7a5cff', '#00e5ff', '#39ff88', '#ffe600', cfg.fontColor];
+        const layer = document.getElementById('confetti');
+        for (let i = 0; i < 120; i++) {
+            const piece = document.createElement('i');
+            const duration = 2.5 + Math.random() * 2;
+            const delay = Math.random() * 0.8;
+            piece.style.left = `${Math.random() * 100}%`;
+            piece.style.background = colors[i % colors.length];
+            piece.style.animationDuration = `${duration}s`;
+            piece.style.animationDelay = `${delay}s`;
+            piece.style.setProperty('--drift', `${(Math.random() - 0.5) * 30}vw`);
+            piece.style.setProperty('--spin', `${(Math.random() - 0.5) * 1440}deg`);
+            layer.appendChild(piece);
+            setTimeout(() => piece.remove(), (duration + delay) * 1000 + 100);
+        }
     }
 
     function setTitle(text) {
@@ -391,6 +519,9 @@
         body.classList.toggle('glow', c.glow);
         body.classList.toggle('pulse', c.pulse);
         body.classList.toggle('blink', c.blink);
+        for (const effect of ['comic', 'rainbow', 'float', 'tick', 'shake']) {
+            body.classList.toggle(effect, c[effect]);
+        }
         displayEl.className = `fmt-${c.format}`;
 
         lastHtml = '';

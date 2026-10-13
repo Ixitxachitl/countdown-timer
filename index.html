@@ -405,7 +405,14 @@
                 <label class="check"><input type="checkbox" id="glitchEffect"> Glitch</label>
                 <label class="check"><input type="checkbox" id="glow"> Neon glow</label>
                 <label class="check"><input type="checkbox" id="pulse"> Pulse in last 10 s</label>
+                <label class="check"><input type="checkbox" id="comic"> Comic</label>
+                <label class="check"><input type="checkbox" id="rainbow"> Rainbow</label>
+                <label class="check"><input type="checkbox" id="float"> Float</label>
+                <label class="check"><input type="checkbox" id="tick"> Bump each tick</label>
+                <label class="check"><input type="checkbox" id="shake"> Shake in last 10 s</label>
+                <label class="check"><input type="checkbox" id="confetti"> Confetti at the end</label>
             </div>
+            <p class="hint">Comic looks best with the Bangers font. Shine and Rainbow both color the text, so pick one.</p>
         </fieldset>
     </form>
 
@@ -479,7 +486,7 @@
                     <tr><td><code>fontColor</code>, <code>titleColor</code></td><td>Hex color, e.g. <code>#FFA500</code></td><td><code>#FFA500</code>, same as timer</td></tr>
                     <tr><td><code>bg</code></td><td>Hex color or <code>transparent</code></td><td><code>#1e1e1e</code></td></tr>
                     <tr><td><code>pad</code>, <code>hideZero</code>, <code>overtime</code>, <code>blink</code>, <code>showDate</code></td><td><code>true</code> or <code>false</code></td><td><code>pad</code> on, others off</td></tr>
-                    <tr><td><code>shineEffect</code>, <code>glitchEffect</code>, <code>glow</code>, <code>pulse</code></td><td><code>true</code> or <code>false</code></td><td>off</td></tr>
+                    <tr><td><code>shineEffect</code>, <code>glitchEffect</code>, <code>glow</code>, <code>pulse</code>, <code>comic</code>, <code>rainbow</code>, <code>float</code>, <code>tick</code>, <code>shake</code>, <code>confetti</code></td><td><code>true</code> or <code>false</code></td><td>off</td></tr>
                 </tbody>
             </table>
         </div>
@@ -491,7 +498,7 @@
     // Google Fonts' CSS endpoint needs no API key, so a curated list replaces the old Webfonts API call
     const FONT_GROUPS = {
         'Monospace & digital': ['Space Mono', 'Roboto Mono', 'JetBrains Mono', 'Share Tech Mono', 'VT323', 'Major Mono Display', 'Press Start 2P', 'Silkscreen'],
-        'Display': ['Orbitron', 'Audiowide', 'Bebas Neue', 'Anton', 'Oswald', 'Teko', 'Rajdhani', 'Russo One', 'Black Ops One', 'Bungee', 'Monoton', 'Righteous', 'Creepster'],
+        'Display': ['Bangers', 'Orbitron', 'Audiowide', 'Bebas Neue', 'Anton', 'Oswald', 'Teko', 'Rajdhani', 'Russo One', 'Black Ops One', 'Bungee', 'Monoton', 'Righteous', 'Creepster'],
         'Sans-serif': ['Inter', 'Montserrat', 'Poppins', 'Roboto', 'Lato'],
         'Serif & script': ['Playfair Display', 'Lobster', 'Pacifico', 'Permanent Marker'],
         'System (works offline)': ['system-ui', 'Arial', 'Georgia', 'Courier New', 'Impact'],
@@ -597,7 +604,7 @@
         params.set('fontColor', $('fontColor').value);
         params.set('titleColor', $('titleColor').value);
         params.set('bg', $('transparentBg').checked ? 'transparent' : $('bgColor').value);
-        for (const id of ['pad', 'hideZero', 'overtime', 'blink', 'showDate', 'shineEffect', 'glitchEffect', 'glow', 'pulse']) {
+        for (const id of ['pad', 'hideZero', 'overtime', 'blink', 'showDate', 'shineEffect', 'glitchEffect', 'glow', 'pulse', 'comic', 'rainbow', 'float', 'tick', 'shake', 'confetti']) {
             params.set(id, $(id).checked);
         }
         return params;
