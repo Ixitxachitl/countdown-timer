@@ -246,6 +246,11 @@
             animation: tick 0.35s ease-out;
         }
 
+        /* scale is ignored on inline boxes */
+        body.tick #display > .ink {
+            display: inline-block;
+        }
+
         body.tick.shine #display > .ink {
             animation: tick 0.35s ease-out, shine 3s linear var(--phase) infinite;
         }
